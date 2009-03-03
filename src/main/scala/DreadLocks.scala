@@ -156,8 +156,10 @@ object DreadLocks
   def main(args: Array[String]) = {
     var source   = Source.fromFile("index.shtml")
     val template = Template(source)
-    //val context  = Context("title" -> "Welcome to DreadLocks", "body" -> "DreadLocks project are hosted on scalalites.org.")
-    val context = Context("likeJunkFood" -> true, "iLikeMac" -> "I like MacDonald.", "iDontLikeMac" -> "I don't like MacDonald.")
+    val context  = Context("restraunts" -> List("Baker Bounce", "Great Burger", "FELLOWS"), 
+                           "haveSideMenu" -> true, 
+                           "sideMenus" -> HashMap("potato" -> "French fries", "coleslaw" -> "coleslaw"))
+    //val context = Context("likeJunkFood" -> true, "iLikeMac" -> "I like MacDonald.", "iDontLikeMac" -> "I don't like MacDonald.")
     println(template.render(context))
   }
 }
