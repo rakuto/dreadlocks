@@ -1,1 +1,97 @@
-The DreadLocks provides template engine library.
+== Welcome to DreadLocks
+
+The DreadLocks is new template engine for Scala programmers, and supported
+scala syntax in your template files.
+
+== Getting Started
+1. Install DreadLocks
+
+== Buildding source
+DreadLocks used simple-build-tool project to build source and manage it. You can
+build after installed and setuped simple-build-tools. The simple-build-tool project are 
+hosted on Google Code <http://code.google.com/p/simple-build-tool/>.
+
+% sbt compile
+% sbt package
+
+For more details, please see simple-build-tool documentation.
+
+== TODO
+* Optimize and Speed up!!
+* Nested tamplates
+* Caching
+* More support of expression of Scala
+* Better error message
+
+== Examples
+
+You should to import DreadLocks code at the top on your program.
+
+    import org.scalalites.dreadlocks._
+
+=== ex. Simple evaluation of template variables.
+The DreadLocks temlate engine allows ${...} and #{...} syntax to evaluate the variable, and
+<?sc ... ?> syntax is evaluated as statements, like foreach, if-else etc. You can see some 
+examples below.
+
+template_variable.shtml:
+    <html>
+        <head>
+            <title>${title}</title>
+        </head>
+        <body>
+            #{body}
+        </body>
+    </html>
+
+TemplateVariable.scala:
+    // You can specify instance of java.io.File, scala.io.Source or String to constructor of Template class.
+    val input = Source.fromFile("template_variable.shtml").getLines.mkString
+    val template = Template(input)
+    val context = Context("title" -> "Welcome to DreadLocks", "body" -> "DreadLocks project are hosted on scalalites.org.")
+    val output = template.render(context)
+
+    Console.println(output)
+    // <html>
+    //    <head>
+    //        <title>Welcome to DreadLocks</title>
+    //    </head>
+    //    <body>DreadLocks project are hosted on scalalites.org.</body>
+    // </html>
+
+=== ex. Examples that evaluate iterable variables.
+
+hamburgers.txt:
+    Delicious hamburger restraunts in Japan:
+    <?sc restraunts.foreach { restraunt => ?>
+      * ${restraunt} 
+    <?sc } ?>
+
+Foreach.scala
+    val source = Source.fromFile("hamburgers.txt")
+    val template = Template(source)
+    val context = Context("restraunts" -> List("Baker Bounce", "Great Burger", "FELLOWS"))
+    val output = template.render(context)
+
+    Console.println(output)
+    // Delicious hamburger restraunts in Japan:
+    //   * Baker Bounce 
+    //   * Great Burger
+    //   * FELLOWS
+
+=== ex. Examples that evaluate if-else syntax.
+hamburger.txt:
+    <?sc if(likeJunkFood) { ?>
+    ${iLikeMac} 
+    <?sc } else { ?>
+    ${iDontLikeMac} 
+    <?sc } ?>
+
+IfElse.scala
+    val input = Source.fromFile("hamburger.txt")
+    val template = Template(input)
+    val context = Context("likeJunkFood" -> true, "iLikeMac" -> "I like MacDonald.", "iDontLikeMac" -> "I don't like MacDonald.")
+    val output = template.render(context)
+
+    Console.println(output)
+    // I like MacDonald.
