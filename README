@@ -59,39 +59,37 @@ TemplateVariable.scala:
     //    <body>DreadLocks project are hosted on scalalites.org.</body>
     // </html>
 
-=== ex. Examples that evaluate iterable variables.
+=== ex. Examples that evaluate iterable variables and if-else statement.
 
-hamburgers.txt:
+hamburgers.txt
     Delicious hamburger restraunts in Japan:
     <?sc restraunts.foreach { restraunt => ?>
-      * ${restraunt} 
+        * ${restraunt} 
     <?sc } ?>
 
-Foreach.scala
-    val source = Source.fromFile("hamburgers.txt")
-    val template = Template(source)
-    val context = Context("restraunts" -> List("Baker Bounce", "Great Burger", "FELLOWS"))
-    val output = template.render(context)
+    Side menus:
+    <?sc if(haveSideMenu) { ?>
+        * ${sideMenus("potato")}
+        * ${sideMenus("coleslaw")}
+    <?sc } ?>
 
-    Console.println(output)
+Complex.scala
+    // You can specify instance of java.io.File, scala.io.Source or String to constructor of Template class.
+    val source   = Source.fromFile("template_variable.shtml")
+    val template = Template(source)
+    val context  = Context("restraunts" -> List("Baker Bounce", "Great Burger", "FELLOWS"), 
+                           "haveSideMenu" -> true, 
+                           "sideMenus" -> HashMap("potato" -> "French fries", "coleslaw" -> "Coleslaw"))
+
+    val output = template.render(context)
+    // Console.println(output)
     // Delicious hamburger restraunts in Japan:
-    //   * Baker Bounce 
+    //   * Baker Bounce
     //   * Great Burger
     //   * FELLOWS
+    //
+    // Side menus:
+    //   * French fries
+    //   * Coleslaw
 
-=== ex. Examples that evaluate if-else syntax.
-hamburger.txt:
-    <?sc if(likeJunkFood) { ?>
-    ${iLikeMac} 
-    <?sc } else { ?>
-    ${iDontLikeMac} 
-    <?sc } ?>
 
-IfElse.scala
-    val input = Source.fromFile("hamburger.txt")
-    val template = Template(input)
-    val context = Context("likeJunkFood" -> true, "iLikeMac" -> "I like MacDonald.", "iDontLikeMac" -> "I don't like MacDonald.")
-    val output = template.render(context)
-
-    Console.println(output)
-    // I like MacDonald.
