@@ -1,7 +1,6 @@
 /**
  * DreadLocks template engien - scalalites.org
- * 
- *  Copyright (c) 2009 Rakuto Furutani (rakuto@scalalites.org)
+ * *  Copyright (c) 2009 Rakuto Furutani (rakuto@gmail.com)
  *  All rights reserved.
  *
  *  Permission to use, copy, modify, and distribute this software in source
@@ -14,10 +13,6 @@
  *    2. Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *
- *    3. Neither the name of the EPFL nor the names of its contributors
- *       may be used to endorse or promote products derived from this
- *       software without specific prior written permission.
  *
  *  THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  *  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -150,7 +145,9 @@ class Template(source: String)
     if(lastPos != in.length) buf += quoteStr(in.substring(lastPos, in.length))
     preamble + " += " + buf.mkString(" + ")
   }
-  private def quoteStr(text: String) =  "\"" + text.replaceAll("\"", "\\\"").replaceAll("\n", "\\\\n") + "\""
+  private def quoteStr(text: String) =  "\"" + text.replaceAll("\"", "\\\"")
+                                        .replaceAll("\n", "\\\\n").replaceAll("\t", "\\\\t") + "\""
+  //private def quoteStr(text: String) =  "\"" + text.replaceAll("\"", "\\\"").replaceAll("\n", "\\\\n") + "\""
   private def expr2str(expr: String) = "(" + expr + ").toString"
 }
 
@@ -159,7 +156,8 @@ object DreadLocks
   def main(args: Array[String]) = {
     var source   = Source.fromFile("index.shtml")
     val template = Template(source)
-    val context  = Context("items" -> List("apple", "orange", "grape"))
-    print(template.render(context))
+    //val context  = Context("title" -> "Welcome to DreadLocks", "body" -> "DreadLocks project are hosted on scalalites.org.")
+    val context = Context("likeJunkFood" -> true, "iLikeMac" -> "I like MacDonald.", "iDontLikeMac" -> "I don't like MacDonald.")
+    println(template.render(context))
   }
 }

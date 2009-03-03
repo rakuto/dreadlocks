@@ -411,7 +411,7 @@ object ScalaInterpreter extends ScalaTokenParser
     // FIXME:  Handling Binary Operation
     def foldBinOp(expr: BinOp): Any = { 
       expr match {
-        case bop @ BinOp(op, lhs: Num[_], rhs: Num[_]) => 
+        case BinOp(op, lhs: Num[_], rhs: Num[_]) => 
           var ret: Any = lhs match {
             case Num(x: Int) => rhs match {
               case Num(y: Int) => op match {
@@ -439,8 +439,8 @@ object ScalaInterpreter extends ScalaTokenParser
             }
           }
           ret
-        case bop @ BinOp(op, lhs: Str, rhs: Term) => lhs.str + evaluateImpl(rhs).toString
-        case bop @ BinOp(op, lhs: Num[_], rhs: Var) =>
+        case BinOp(op, lhs: Str, rhs: Term) => evaluateImpl(lhs).toString + evaluateImpl(rhs).toString
+        case BinOp(op, lhs: Num[_], rhs: Var) =>
           var ret: Any = null
           val r = evaluateImpl(rhs)
           if(r.isInstanceOf[String]) {
@@ -452,7 +452,7 @@ object ScalaInterpreter extends ScalaTokenParser
             throw new RuntimeException("unsported type: " + rhs) 
           }
           ret
-        case bop @ BinOp(op, lhs, rhs) =>
+        case BinOp(op, lhs, rhs) =>
           // FIXME:
           var l = evaluateImpl(lhs)
           var r = evaluateImpl(rhs)
@@ -466,7 +466,7 @@ object ScalaInterpreter extends ScalaTokenParser
     }
     def evaluateImpl(expr: Term, returnType: Class[_]*): Any = {
       var retval = expr match {
-        case s @ Str(str) => str.replaceAll("\\\\n", "\n")
+        case s @ Str(str) => str.replaceAll("\\\\n", "\n").replaceAll("\\\\t", "\t")
         case n @ Num(x)   => x
         case b @ Bool(b0) => b0
         case bop @ BinOp(_, _, _) => foldBinOp(bop)
@@ -574,6 +574,6 @@ object ScalaInterpreter extends ScalaTokenParser
   def main(args: Array[String]) = {
     val input = """var _buf: String = ""; books.foreach{ (book: String) => _buf += book.toString + " " + " "}; _buf.toString"""
     var ret: Any = evaluate(input, Context("books" -> List("one", "two")))
-    println(ret)
+    Console.println(ret)
   }
 }
