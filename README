@@ -6,6 +6,9 @@ scala syntax in your template files.
 == Getting Started
 1. Install DreadLocks
 
+Download latest dreadlocks.jar from GitHub:
+http://cloud.github.com/downloads/rakuto/dreadlocks/dreadlocks-0.1.jar
+
 == Buildding source
 DreadLocks used simple-build-tool project to build source and manage it. You can
 build after installed and setuped simple-build-tools. The simple-build-tool project are 
