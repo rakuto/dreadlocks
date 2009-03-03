@@ -1,0 +1,4 @@
+*.shtml
+lib_managed/*
+target/*
+**.class
