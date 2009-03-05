@@ -1,7 +1,7 @@
 /**
- * DreadLocks - powered by scalalites.org
+ * ScalaInterpreter - scalalites.org
  *
- * Copyright (c) 2009 Rakuto Furutani (rakuto@gmail.com)
+ * Copyright (c) 2009 Rakuto Furutani (rakuto@scalalites.org)
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software in source
@@ -30,7 +30,8 @@
 package org.scalalites.dreadlocks
 
 import scala.util.parsing.combinator.ImplicitConversions
-import scala.util.parsing.combinator.syntactical.{StandardTokenParsers}
+import scala.util.parsing.combinator.syntactical.{StandardTokenParsers, StdTokenParsers}
+import scala.util.parsing.combinator.lexical.StdLexical
 import scala.util.parsing.syntax.StdTokens
 import scala.util.parsing.input.{Positional, Reader, Position}
 import scala.util.parsing.combinator.RegexParsers
@@ -49,11 +50,15 @@ object Context
   def apply(elems: (String, Any)*): Map[String, Any] = empty ++ elems
 }
 
-/**
- * Define tokens of scala programs
- */
-sealed trait ScalaSyntax  // {{{
-{
+sealed trait ScalaTokens extends StdTokens {
+  case class SymbolLit(chars: String) extends Token {
+    override def toString = "'" + chars
+  }
+  case class CharLit(chars: String) extends Token {
+    override def toString = "'" + chars + "'"
+  }
+
+  // tokens
   abstract class Term extends Positional
   // Primitive values
   abstract class PrimaryExpr extends Term
@@ -73,12 +78,19 @@ sealed trait ScalaSyntax  // {{{
   {
     override def toString = str.mkString("\"", "", "\"")
   }
-  case class Symbol(str: String) extends Term
+  case class Char0(char: String) extends Term
+  {
+    override def toString = "'" + char + "'"
+  }
+  case class Symbol0(str: String) extends Term
   {
     override def toString = Symbol(str).toString
     //override def klass = classOf[Symbol]
   }
-  case class Null0 extends Term
+  case class TTuple(elems: List[Term]) extends Term
+  {
+    override def toString = elems.mkString("(", ", ", ")") 
+  }
 
   // Types
   abstract class TType[T] extends Term
@@ -153,6 +165,10 @@ sealed trait ScalaSyntax  // {{{
   {
     override def klass = classOf[AnyRef]
   }
+  case class TChar extends TType[Char]
+  {
+    override def klass = classOf[Char]
+  }
 
   // Statements
   case class DeclVar(variable: Var, type0: Option[TType[_]], expr: Term) extends Term
@@ -219,16 +235,40 @@ sealed trait ScalaSyntax  // {{{
     override def toString = name + "[" + ptype + "]"
   }
 }
-// }}}
 
-trait TypeInference
-{
-  def inferType(v: Any) = {
-    if(v.isInstanceOf[String]) v.asInstanceOf[String]
-    else if(v.isInstanceOf[Int]) v.asInstanceOf[Int]
-    else if(v.isInstanceOf[Double]) v.asInstanceOf[Double]
-  }
+sealed class ScalaLexical extends StdLexical with ScalaTokens {
+  import scala.util.parsing.input.CharArrayReader.EofCh
+
+  // Overroad definition of Scala's tokens
+  override def token: Parser[Token] = (
+    ( letter ~ rep( letter | digit )                    ^^ { case first ~ rest => processIdent(first :: rest mkString "") }
+    | digit ~ rep( digit )                              ^^ { case first ~ rest => NumericLit(first :: rest mkString "") }
+    | '\'' ~ letter ~ '\''                              ^^ { case '\'' ~ char ~ '\'' => CharLit(char.toString) }
+    | '\"' ~ rep( chrExcept('\"', '\n', EofCh) ) ~ '\"' ^^ { case '\"' ~ chars ~ '\"' => StringLit(chars mkString "") }
+    | EofCh                                             ^^^ EOF
+    | '\'' ~> failure("unclosed string literal")
+    | '\"' ~> failure("unclosed string literal")
+    | delim
+    | failure("illegal character")
+    ))
 }
+
+sealed class ScalaTokenParsers extends StdTokenParsers with ScalaTokens {
+  //import lexical.Identifier
+  type Tokens = ScalaTokens
+  val lexical = new ScalaLexical
+
+  // Define primitive tokens
+  def symbolLit: Parser[String] = elem("symbol", x => x.isInstanceOf[SymbolLit]) ^^ (_.chars)
+  def charLit: Parser[String]   = elem("char", x => x.isInstanceOf[CharLit]) ^^ (_.chars)
+  def ident1: Parser[String]    = rep("_") ~ ident ^^ { case us ~ id => us.mkString + id}
+  def lident: Parser[String]    = 
+    elem("lidentifier", x => x.isInstanceOf[Identifier] && x.chars.charAt(0).isLowerCase) ^^ (_.chars)
+  def uident: Parser[String]  = 
+    elem("uidentifier", x => x.isInstanceOf[Identifier] && x.chars.charAt(0).isUpperCase) ^^ (_.chars)
+}
+
+// }}}
 
 /**
  * ScalaTokenParser
@@ -251,8 +291,10 @@ trait TypeInference
  *    integer_constant ::= (octal_constant | hex_constant) integer_suffix
  *    number_constant  ::= integer_constant | float_constant
  *
+ *    string     ::= "\"" {letter} "\""
+ *    character  ::= "'" letter "'"
  *    boolean    ::= true | false 
- *    literal    ::= boolean | identifier | number_constant | String | Symbol | "null"
+ *    literal    ::= boolean | number_constant | string | symbol | character | "null"
  *    boolean    ::= true | false
  *    identifier ::= ["_"] {letter}
  *    type       ::= identifier
@@ -291,26 +333,14 @@ trait TypeInference
  *                        | statements
  *                        | primitive_value
  */
-class ScalaTokenParser extends StandardTokenParsers with ImplicitConversions with ScalaSyntax
+class ScalaTokenParser extends ScalaTokenParsers with ImplicitConversions
 {
-  import lexical.Identifier
   lexical.reserved += ("_", "if", "else", "else if", "new", "case", "match", "true", "false", "var", "val", "null", 
                        "try", "catch", "with", "::")
   lexical.delimiters += ("(", ")", ",", "=", "{", "}", ".", "+", "-", "*", "/", "+=", "-=", "*=", "/=", 
                          "&", "|", "^", "&&", ":", "=>", "->", ">>", ">>>", "<<", ";", "[", "]", "_")
                          
-
-  private lazy val parser = phrase(program)
   private def pos[T <: Positional](p: => Parser[T]): Parser[T] = positioned(p)
-
-  def ident1: Parser[String] = rep("_") ~ ident ^^ { case us ~ id => us.mkString + id}
-  //def ident1: Parser[String] = 
-    //elem("identifier", x => """[_]*[0-9a-zA-Z_]+""".r.findFirstMatchIn(x.chars) match { case Some(_) => true; case None => false}) ^^ (_.chars)
-  def lident: Parser[String] = 
-    elem("lidentifier", x => x.isInstanceOf[Identifier] && x.chars.charAt(0).isLowerCase) ^^ (_.chars)
-
-  def uident: Parser[String] = 
-    elem("uidentifier", x => x.isInstanceOf[Identifier] && x.chars.charAt(0).isUpperCase) ^^ (_.chars)
 
   // Primitive expressions
   def typeIdent: Parser[TType[_]] = ident ^^ {
@@ -323,16 +353,19 @@ class ScalaTokenParser extends StandardTokenParsers with ImplicitConversions wit
       case "Byte"   => new TByte
       case "String" => new TString
       case "Any"    => new TAny
+      case "Char"   => new TChar
       case _        => new TRef(Class.forName(t))
     }
   }
   // Primitive values
-  def str: Parser[Str]      = stringLit ^^ Str
-  def literal: Parser[Term] = bool | num | str
+  def str: Parser[Str]        = stringLit ^^ Str
+  def char: Parser[Char0]     = charLit ^^ Char0
+  def symbol: Parser[Symbol0] = symbolLit ^^ Symbol0
+  def literal: Parser[Term]   = str | char | num | bool | symbol | failure("unexepcted quote after symbol")
   def floatingPointNumber: Parser[Double] = numericLit ~ "." ~ numericLit ^^ { case i ~ _ ~ f => (i + "." + f).toDouble}
   def num: Parser[Num[_]]   = floatingPointNumber ^^ { x => Num(x.toDouble) } | numericLit ^^ { x => Num(x.toInt) }
   def bool: Parser[Bool]    = ("true" | "false") ^^ {b => Bool(b == "true")}
-  def null0: Parser[Null0]  = "null" ^^^ new Null0
+  def null0: Parser[TNull]  = "null" ^^^ new TNull
   def variable: Parser[Var] = ident1 ~ opt(":" ~> typeIdent) ^^ 
     { case n ~ Some(typ) => Var(n, typ); case n ~ None => Var(n, new TString)}
 
@@ -359,6 +392,7 @@ class ScalaTokenParser extends StandardTokenParsers with ImplicitConversions wit
   def statements: Parser[Term]   = declVarStmt | ifStmt
 
   // Expressions
+  def tupleExpr: Parser[TTuple]   = ("(" ~> repsep(primaryExpr, ",") <~ ")") ^^ TTuple
   def referenceExpr: Parser[Ref]  = variable ~ ("(" ~> (primaryExpr)  <~ ")") ^^ Ref
   def methApplyExpr: Parser[Term] = primaryExpr ~ rep((opt(".") ~> ident1) ~ opt(argument)) ^^ reduceApplyList
   def primaryExpr: Parser[Term]   = literal | variable | anonFunc | "(" ~> expr <~ ")"
@@ -371,6 +405,7 @@ class ScalaTokenParser extends StandardTokenParsers with ImplicitConversions wit
     | referenceExpr
     | additiveExpr
     | referenceExpr
+    | tupleExpr
     | primaryExpr
   )
   def program: Parser[List[Term]] = rep(rep(";") ~> expr <~ rep(";"))
@@ -385,7 +420,8 @@ class ScalaTokenParser extends StandardTokenParsers with ImplicitConversions wit
   }
 
   // public API
-  def parse(input: String) = parser(new lexical.Scanner(input))
+  //private lazy val parser = phrase(program)
+  def parse(input: String) = phrase(program)(new lexical.Scanner(input))
 }
 
 /**

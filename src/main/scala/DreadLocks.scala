@@ -1,6 +1,7 @@
 /**
  * DreadLocks template engien - scalalites.org
- * *  Copyright (c) 2009 Rakuto Furutani (rakuto@gmail.com)
+ *
+ *  Copyright (c) 2009 Rakuto Furutani (rakuto@scalalites.org)
  *  All rights reserved.
  *
  *  Permission to use, copy, modify, and distribute this software in source

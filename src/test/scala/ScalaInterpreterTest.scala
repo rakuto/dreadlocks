@@ -36,8 +36,18 @@ class ScalaInterpreterTest extends FunSuite {
     var trees = ScalaInterpreter.parse(program)
     assert(trees.successful)
   }
+  test("Parsing expression define tuple with two elements.") {
+    var program = """var t = (23, "rakuto")"""
+    var trees = ScalaInterpreter.parse(program)
+    assert(trees.successful)
+  }
+  test("Parsing expression define variable with chracter.") {
+    var program = "var ch: Char = 'c'" 
+    var trees = ScalaInterpreter.parse(program)
+    assert(trees.successful)
+  }
 
-  /** Scala Interpreter **/
+  // Scala Interpreter
   test("Evaluate arithmetic expression.") {
     var program = "1 + 2 + 3"
     var result = ScalaInterpreter.evaluate(program, Context()).asInstanceOf[Int]
@@ -75,4 +85,5 @@ class ScalaInterpreterTest extends FunSuite {
     var result = ScalaInterpreter.evaluate(program, Context())
     assert(result === "123")
   }
+  
 }
