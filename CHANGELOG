@@ -1,0 +1,10 @@
+03.05.2009 
+ * Release DreadLocks 0.2
+ * Improve ScalaLanguageInterpreter class
+ * Bug fix and add support of Scala syntax below
+ *  Tuple
+ *  Symbol
+
+03.03.2009 
+ * First release of DreadLocks 0.1 
+
