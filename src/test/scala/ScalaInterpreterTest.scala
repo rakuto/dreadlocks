@@ -4,45 +4,50 @@ import org.scalalites.dreadlocks._
 
 class ScalaInterpreterTest extends FunSuite {
   // Testing to parse syntax of scala language
-  test("Parsing arithmetic expression") {
+  test("Parse arithmetic expression") {
     var program = "(2 * 3) / 4" 
     var trees = ScalaInterpreter.parse(program)
     assert(trees.successful)
   }
-  test("Parsing expression includes boolean values.") {
+  test("Parse expression includes boolean values.") {
     var program = "true; false;"
     var trees = ScalaInterpreter.parse(program)
     assert(trees.successful)
   }
 
-  // expression consits of some conditional branch statements
-  test("Parsing expression includes if statement.") {
+  // Test of parsing expression
+  test("Parse if statement.") {
     var program = "if(true) { \"true\".toString }"
     var trees = ScalaInterpreter.parse(program)
     assert(trees.successful)
   }
-  test("Parsing expression includes if-else statement.") {
+  test("Parse if-else statement.") {
     var program = "if(true) { \"if\".toString } else { \"else\"}"
     var trees = ScalaInterpreter.parse(program)
     assert(trees.successful)
   }
-  test("Parsing expression includes if-else-if statement.") {
+  test("Parse if-else-if statement.") {
     var program = "if(true) { \"if\" } else if(false) { \"else if\" }"
     var trees = ScalaInterpreter.parse(program)
     assert(trees.successful)
   }
-  test("Parsing expression includes if-else-if-else statement.") {
+  test("Parse if-else-if-else statement.") {
     var program = "if(true) { \"if\" } else if(false) { \"else if\" } else { \"else\"}"
     var trees = ScalaInterpreter.parse(program)
     assert(trees.successful)
   }
-  test("Parsing expression define tuple with two elements.") {
+  test("Parse expression define tuple with two elements.") {
     var program = """var t = (23, "rakuto")"""
     var trees = ScalaInterpreter.parse(program)
     assert(trees.successful)
   }
-  test("Parsing expression define variable with chracter.") {
+  test("Parse expression define variable with chracter.") {
     var program = "var ch: Char = 'c'" 
+    var trees = ScalaInterpreter.parse(program)
+    assert(trees.successful)
+  }
+  test("Parse expression contains reference of element in tuples.") {
+    var program = "var t = (24, 25); t._1"
     var trees = ScalaInterpreter.parse(program)
     assert(trees.successful)
   }
@@ -85,5 +90,4 @@ class ScalaInterpreterTest extends FunSuite {
     var result = ScalaInterpreter.evaluate(program, Context())
     assert(result === "123")
   }
-  
 }

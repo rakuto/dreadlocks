@@ -87,9 +87,9 @@ sealed trait ScalaTokens extends StdTokens {
     override def toString = Symbol(str).toString
     //override def klass = classOf[Symbol]
   }
-  case class TTuple(elems: List[Term]) extends Term
+  case class Tuple0(elems: List[Term]) extends Term
   {
-    override def toString = elems.mkString("(", ", ", ")") 
+    //override def toString = elems.mkString("(", ", ", ")") 
   }
 
   // Types
@@ -224,11 +224,15 @@ sealed trait ScalaTokens extends StdTokens {
   {
     override def toString = rcv + arg.toString.mkString("(", "", ")")
   }
+  case class RefTuple(rcv: Term, n: Int) extends Term
+  {
+    override def toString = rcv.toString.mkString("(", "", ").") + "_" + n
+  }
 
   // miscellaneous
   case class Class0(name: String) extends Term
   {
-    override def toString = name 
+    override def toString = name
   }
   case class Class1(name: String, ptype: Term) extends Term
   {
@@ -392,19 +396,20 @@ class ScalaTokenParser extends ScalaTokenParsers with ImplicitConversions
   def statements: Parser[Term]   = declVarStmt | ifStmt
 
   // Expressions
-  def tupleExpr: Parser[TTuple]   = ("(" ~> repsep(primaryExpr, ",") <~ ")") ^^ TTuple
-  def referenceExpr: Parser[Ref]  = variable ~ ("(" ~> (primaryExpr)  <~ ")") ^^ Ref
-  def methApplyExpr: Parser[Term] = primaryExpr ~ rep((opt(".") ~> ident1) ~ opt(argument)) ^^ reduceApplyList
-  def primaryExpr: Parser[Term]   = literal | variable | anonFunc | "(" ~> expr <~ ")"
-  def assignExpr: Parser[Term]    = variable ~ assignOp ~ expr ^^ { case rcv ~ op ~ expr => AssignOp(op, rcv, expr) }
-  def additiveExpr: Parser[Term]  = multiExpr ~! rep(additiveOp ~! expr) ^^ reduceBinOpList
-  def multiExpr: Parser[Term]     = methApplyExpr ~! rep(multiOp ~! expr) ^^ reduceBinOpList
+  def tupleExpr: Parser[Tuple0]      = ("(" ~> repsep(primaryExpr, ",") <~ ")") ^^ Tuple0
+  def refExpr: Parser[Term]          = variable ~ ("(" ~> (primaryExpr)  <~ ")") ^^ Ref | refTupleExpr
+  def refTupleExpr: Parser[RefTuple] = variable ~ (opt(".") ~> "_" ~> numericLit) ^^ { case t ~ idx => RefTuple(t, idx.toInt)}
+  def methApplyExpr: Parser[Term]    = primaryExpr ~ rep((opt(".") ~> ident1) ~ opt(argument)) ^^ reduceApplyList
+  def primaryExpr: Parser[Term]      = literal | variable | anonFunc | "(" ~> expr <~ ")"
+  def assignExpr: Parser[Term]       = variable ~ assignOp ~ expr ^^ { case rcv ~ op ~ expr => AssignOp(op, rcv, expr) }
+  def additiveExpr: Parser[Term]     = multiExpr ~! rep(additiveOp ~! expr) ^^ reduceBinOpList
+  def multiExpr: Parser[Term]        = methApplyExpr ~! rep(multiOp ~! expr) ^^ reduceBinOpList
   def expr: Parser[Term] = (
     assignExpr
     | statements
-    | referenceExpr
+    | refExpr 
     | additiveExpr
-    | referenceExpr
+    | refExpr 
     | tupleExpr
     | primaryExpr
   )
@@ -523,36 +528,35 @@ object ScalaInterpreter extends ScalaTokenParser
                 //case "^=" =>
                 //case "++=" =>
                 //case "--=" =>
-                case _ => throw new RuntimeException("unsupported type")
+                case _ => throw new RuntimeException("unsupported operand")
               }
             case None => null // never execute
           }
         case f @ Fun(args, expr) =>
           args.size match {
             case 1 =>
-              var func = new Function1[String, Unit] {
-                def apply(arg: String) = {
+              var func = new Function1[AnyRef, Unit] {
+                def apply(arg: AnyRef): Unit = {
                   var context = globalContextChain.top
                   context += (args(0).asInstanceOf[Var].name -> arg)
                   expr.foreach(evaluateImpl(_, classOf[Any]))
                 }
               }
               func
-            //case 2 =>
-            //case 3 =>
-            //case 4 =>
-            //case 5 =>
-            //case 6 =>
-            //case 7 =>
+            case _ => throw new RuntimeException("wrong number of parameters: " + args)
           }
         case a @ Apply(rcv, methName, args) => 
           var receiver = evaluateImpl(rcv)
           var ret: Any = methName match {
             case "foreach" =>
               var f:(Any) => Unit = evaluateImpl(args(0)).asInstanceOf[Any => Unit]
+              try{
               globalContextChain.push(new HashMap[String, Any])
               receiver.asInstanceOf[Seq[_]].foreach(f)
               globalContextChain.pop
+              } catch {
+                case e => println(e) 
+              }
               ()
             case "toString" => receiver.toString
             case _ =>
@@ -583,6 +587,7 @@ object ScalaInterpreter extends ScalaTokenParser
               }
             case Num(idx: Int) => evaluateImpl(v).asInstanceOf[Seq[_]](idx)
           }
+        case ref @ RefTuple(v, idx) => evaluateImpl(v).asInstanceOf[Product].productElement(idx - 1)
         // Statements
         case If(cond, exprs, elseIfStmts, elseStmt) =>
           if(evaluateImpl(cond).asInstanceOf[Boolean]) {
