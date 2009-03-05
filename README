@@ -32,10 +32,10 @@ You should to import DreadLocks code at the top on your program.
 
     import org.scalalites.dreadlocks._
 
-=== ex. Simple evaluation of template variables.
+=== Tutorials
 The DreadLocks temlate engine allows ${...} and #{...} syntax to evaluate the variable, and
 <?sc ... ?> syntax is evaluated as statements, like foreach, if-else etc. You can see some 
-examples below.
+examples below. There are many exmaples in src/test/resources/ and src/test/scala/, please see them.
 
 template_variable.shtml:
     <html>
