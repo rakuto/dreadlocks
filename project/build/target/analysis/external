@@ -1,5 +1,5 @@
 #External Dependencies
-#Thu Mar 05 22:56:58 JST 2009
+#Thu Mar 05 23:10:41 JST 2009
 /usr/local/scala/lib/sbt.jar=src/DreadLocksProject.scala
 /usr/local/scala/lib/scala-library.jar=src/DreadLocksProject.scala
 /System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/classes.jar=src/DreadLocksProject.scala

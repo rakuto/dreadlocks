@@ -1,15 +1,34 @@
-== Welcome to DreadLocks
+Welcome to DreadLocks
+=====================
 
 The DreadLocks is new template engine for Scala programmers, and supported
 scala syntax in your template files.
 
-== Getting Started
+Getting Started
+---------------
 1. Install DreadLocks
 
 Download latest dreadlocks.jar from GitHub:
-http://cloud.github.com/downloads/rakuto/dreadlocks/dreadlocks-0.1.jar
+http://cloud.github.com/downloads/rakuto/dreadlocks/dreadlocks-0.2.jar
 
-== Buildding source
+Features
+--------
+- Support Scala expression
+    
+    Currently support limited Scala expression, foreach, if-elseif-else, to apply method and more.
+
+Goals
+-----
+- fast
+
+    The DreadLocks aims to be fastest template engine.
+
+- easy to use
+
+    Support all Scala expression. 
+
+Build
+-----
 DreadLocks used simple-build-tool project to build source and manage it. You can
 build after installed and setuped simple-build-tools. The simple-build-tool project are 
 hosted on Google Code <http://code.google.com/p/simple-build-tool/>.
@@ -19,20 +38,21 @@ hosted on Google Code <http://code.google.com/p/simple-build-tool/>.
 
 For more details, please see simple-build-tool documentation.
 
-== TODO
+ToDo
+-----
 * Optimize and Speed up!!
 * Nested tamplates
 * Caching
 * More support of expression of Scala
 * Better error message
 
-== Examples
+Examples
+--------
 
 You should to import DreadLocks code at the top on your program.
 
     import org.scalalites.dreadlocks._
 
-=== Tutorials
 The DreadLocks temlate engine allows ${...} and #{...} syntax to evaluate the variable, and
 <?sc ... ?> syntax is evaluated as statements, like foreach, if-else etc. You can see some 
 examples below. There are many exmaples in src/test/resources/ and src/test/scala/, please see them.
@@ -62,7 +82,7 @@ TemplateVariable.scala:
     //    <body>DreadLocks project are hosted on scalalites.org.</body>
     // </html>
 
-=== ex. Examples that evaluate iterable variables and if-else statement.
+ex. Examples that evaluate iterable variables and if-else statement.
 
 hamburgers.txt
     Delicious hamburger restraunts in Japan:
@@ -94,5 +114,3 @@ Complex.scala
     // Side menus:
     //   * French fries
     //   * Coleslaw
-
-
