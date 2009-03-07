@@ -12,10 +12,9 @@ class DreadLocksTest extends FunSuite {
     val source = Source.fromFile(tmpl).getLines.mkString
     val template = Template(source)
     val output = template.render(Context("books" -> List("The Great Gatzby", "Tender is the Night")))
-    val expect = "F.Scotto.Fitzgerald wrote:\n * The Great Gatzby\n * Tender is the Night\nand more.\n"
+    val expect = "<p class=\"label\">F.Scotto.Fitzgerald wrote:</p>\n<ul>\n<li>The Great Gatzby</li>\n<li>Tender is the Night</li>\n</ul>\n<p>and more.</p>\n"
     assert(output === expect)
   }
-  /*
   test("foreach2.shtml - with a parameter contains tuples") {
     val tmpl     = examplTmplateFile("foreach2.shtml")
     val source   = Source.fromFile(tmpl).getLines.mkString
@@ -53,5 +52,4 @@ class DreadLocksTest extends FunSuite {
     val output = template.render(Context("persona" -> persona))
     assert(output === "Hello, my name is Rakuto Furutani\n")
   }
- */ 
 }

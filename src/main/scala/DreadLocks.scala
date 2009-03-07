@@ -146,7 +146,7 @@ class Template(source: String)
     if(lastPos != in.length) buf += quoteStr(in.substring(lastPos, in.length))
     preamble + " += " + buf.mkString(" + ")
   }
-  private def quoteStr(text: String) =  "\"" + text.replaceAll("\"", "\\\"")
+  private def quoteStr(text: String) =  "\"" + text.replaceAll("\"", "\\\\\"")
                                         .replaceAll("\n", "\\\\n").replaceAll("\t", "\\\\t") + "\""
   //private def quoteStr(text: String) =  "\"" + text.replaceAll("\"", "\\\"").replaceAll("\n", "\\\\n") + "\""
   private def expr2str(expr: String) = "(" + expr + ").toString"

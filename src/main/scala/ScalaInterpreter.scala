@@ -71,12 +71,12 @@ sealed trait ScalaTokens extends StdTokens {
   }
   case class Bool(b: Boolean) extends Term
   {
-    override def toString = b.toString 
+    override def toString = b.toString
     //override def klass = classOf[Boolean]
   }
   case class Str(str: String) extends Term
   {
-    override def toString = str.mkString("\"", "", "\"")
+    override def toString = str.replace("\"", "\\\"").mkString("\"", "", "\"")
   }
   case class Char0(char: String) extends Term
   {
@@ -248,13 +248,24 @@ sealed class ScalaLexical extends StdLexical with ScalaTokens {
     ( letter ~ rep( letter | digit )                    ^^ { case first ~ rest => processIdent(first :: rest mkString "") }
     | digit ~ rep( digit )                              ^^ { case first ~ rest => NumericLit(first :: rest mkString "") }
     | '\'' ~ letter ~ '\''                              ^^ { case '\'' ~ char ~ '\'' => CharLit(char.toString) }
-    | '\"' ~ rep( chrExcept('\"', '\n', EofCh) ) ~ '\"' ^^ { case '\"' ~ chars ~ '\"' => StringLit(chars mkString "") }
+    | '\"' ~ rep( charSeq | chrExcept('\"', '\n', EofCh) ) ~ '\"' ^^ { case '\"' ~ chars ~ '\"' => StringLit(chars mkString "") }
     | EofCh                                             ^^^ EOF
     | '\'' ~> failure("unclosed string literal")
     | '\"' ~> failure("unclosed string literal")
     | delim
     | failure("illegal character")
     ))
+
+  def charSeq: Parser[String] = (
+      '\\'  ~ '\"' ^^^ "\""
+    | '\\'  ~ '\\' ^^^ "\\"
+    | '\\'  ~ '/' ^^^ "/"
+    | '\\'  ~ 'b' ^^^ "\b"
+    | '\\'  ~ 'f' ^^^ "\f"
+    | '\\'  ~ 'n' ^^^ "\n"
+    | '\\'  ~ 'r' ^^^ "\r"
+    | '\\'  ~ 't' ^^^ "\t"
+  )
 }
 
 sealed class ScalaTokenParsers extends StdTokenParsers with ScalaTokens {
