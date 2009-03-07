@@ -7,5 +7,5 @@ class DreadLocksProject(info: ProjectInfo) extends DefaultProject(info)
   val compiler  = "org.scala-lang" % "scala-compiler" % "2.7.3"
 
   /// main
-  override def mainClass = Some("org.scalalites.benchmark.RunBenchmark")
+  override def mainClass = Some("org.scalalites.dreadlocks.ScalaInterpreter")
 }

@@ -613,8 +613,14 @@ object ScalaInterpreter extends ScalaTokenParser
   }
 
   def main(args: Array[String]) = {
-    val input = """var _buf: String = ""; books.foreach{ (book: String) => _buf += book.toString + " " + " "}; _buf.toString"""
-    var ret: Any = evaluate(input, Context("books" -> List("one", "two")))
-    Console.println(ret)
+    //import org.scalalites.benchmark.Benchmark
+    //Benchmark.run("Benchmark of ScalaInterpreter") { b =>
+      //b.report("arithmetic expression", 100) {
+        //ScalaInterpreter.evaluate("3 * 3 * 4 * 5")
+      //}
+    //}
+    //val input = """var _buf: String = ""; books.foreach{ (book: String) => _buf += book.toString + " " + " "}; _buf.toString"""
+    //var ret: Any = evaluate(input, Context("books" -> List("one", "two")))
+    //Console.println(ret)
   }
 }
