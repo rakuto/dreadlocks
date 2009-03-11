@@ -212,7 +212,7 @@ sealed trait ScalaTokens extends StdTokens {
 
   // Operators
   abstract class Operator extends Term
-  case class UnOp(receiver: Term, x: String) extends Operator
+  case class UnOp(op: String, r: Term) extends Operator
   case class BinOp(op: String, lhs: Term, rhs: Term) extends Operator
   {
     override def toString = lhs + op.mkString(" ", "", " ") + rhs
@@ -349,7 +349,7 @@ class ScalaTokenParser extends ScalaTokenParsers with ImplicitConversions
   lexical.reserved += ("_", "if", "else", "else if", "new", "case", "match", "true", "false", "var", "val", "null", 
                        "try", "catch", "with", "::", "yield")
   lexical.delimiters += ("(", ")", ",", "=", "{", "}", ".", "+", "-", "*", "/", "+=", "-=", "*=", "/=", 
-                         "&", "|", "^", "&&", ":", "=>", "->", ">>", ">>>", "<<", ";", "[", "]", "_")
+                         "&", "|", "^", "&&", ":", "=>", "->", ">>", ">>>", "<<", ";", "[", "]", "_", "!")
                          
   private def pos[T <: Positional](p: => Parser[T]): Parser[T] = positioned(p)
 
@@ -374,13 +374,14 @@ class ScalaTokenParser extends ScalaTokenParsers with ImplicitConversions
   def symbol: Parser[Symbol0] = symbolLit ^^ Symbol0
   def literal: Parser[Term]   = str | char | num | bool | symbol | failure("unexepcted quote after symbol")
   def floatingPointNumber: Parser[Double] = numericLit ~ "." ~ numericLit ^^ { case i ~ _ ~ f => (i + "." + f).toDouble}
-  def num: Parser[Num[_]]   = floatingPointNumber ^^ { x => Num(x.toDouble) } | numericLit ^^ { x => Num(x.toInt) }
-  def bool: Parser[Bool]    = ("true" | "false") ^^ {b => Bool(b == "true")}
-  def null0: Parser[TNull]  = "null" ^^^ new TNull
-  def variable: Parser[Var] = ident ~ opt(":" ~> typeIdent) ^^ 
+  def num: Parser[Num[_]]     = floatingPointNumber ^^ { x => Num(x.toDouble) } | numericLit ^^ { x => Num(x.toInt) }
+  def bool: Parser[Bool]      = ("true" | "false") ^^ {b => Bool(b == "true")}
+  def null0: Parser[TNull]    = "null" ^^^ new TNull
+  def variable: Parser[Var]   = ident ~ opt(":" ~> typeIdent) ^^ 
     { case n ~ Some(typ) => Var(n, typ); case n ~ None => Var(n, new TString)}
 
   // Operators
+  def unaryOp: Parser[String]    = "!"
   def additiveOp: Parser[String] = "+" | "-"
   def multiOp: Parser[String]    = "*" | "%" | "/"
   def assignOp: Parser[String]   = "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | "++=" | "--="
@@ -403,11 +404,12 @@ class ScalaTokenParser extends ScalaTokenParsers with ImplicitConversions
   def statements: Parser[Term]   = declVarStmt | ifStmt
 
   // Expressions
+  def unaryExpr: Parser[UnOp]        = unaryOp ~ (bool | variable) ^^ UnOp
   def tupleExpr: Parser[Tuple0]      = ("(" ~> repsep(primaryExpr, ",") <~ ")") ^^ Tuple0
   def refExpr: Parser[Term]          = variable ~ ("(" ~> (primaryExpr)  <~ ")") ^^ Ref | refTupleExpr
   def refTupleExpr: Parser[RefTuple] = variable ~ (opt(".") ~> "_" ~> numericLit) ^^ { case t ~ idx => RefTuple(t, idx.toInt)}
   def methApplyExpr: Parser[Term]    = primaryExpr ~ rep((opt(".") ~> ident) ~ opt(argument)) ^^ reduceApplyList
-  def primaryExpr: Parser[Term]      = literal | variable | anonFunc | "(" ~> expr <~ ")"
+  def primaryExpr: Parser[Term]      = literal | variable | unaryExpr | anonFunc | "(" ~> expr <~ ")"
   def assignExpr: Parser[Term]       = variable ~ assignOp ~ expr ^^ { case rcv ~ op ~ expr => AssignOp(op, rcv, expr) }
   def additiveExpr: Parser[Term]     = multiExpr ~! rep(additiveOp ~! expr) ^^ reduceBinOpList
   def multiExpr: Parser[Term]        = methApplyExpr ~! rep(multiOp ~! expr) ^^ reduceBinOpList
@@ -609,6 +611,9 @@ object ScalaInterpreter extends ScalaTokenParser
             }
           }
         case Else(expr) => expr.map(evaluateImpl(_, classOf[Any])).last
+        case UnOp(op, expr) => op match {
+          case "!" => ! evaluateImpl(expr).asInstanceOf[Boolean] 
+        }
         case _ => throw new RuntimeException("undefined token " + expr)
       }
       retval

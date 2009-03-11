@@ -37,12 +37,30 @@ class DreadLocksTest extends FunSuite {
   //}
   test("foreach2.shtml - with a parameter contains tuples") {
     val tmpl     = examplTmplateFile("foreach2.shtml")
-    val source   = Source.fromFile(tmpl).getLines.mkString
+    val source   = Source.fromFile(tmpl)
     val template = Template(source)
     val context  = Context("cafes" -> List(("Authentic", "Akasaka, Tokyo"), ("FELLOWS", "Komazawa, Tokyo")))
     val output   = template.render(context)
     val expect   = "Hamburger Cafe:\n * Authentic in Akasaka, Tokyo\n * FELLOWS in Komazawa, Tokyo\n"
-    assert(output == expect)
+    assert(output === expect)
+  }
+  test("unary-op.txt") {
+    val tmpl = examplTmplateFile("unary-op.txt") 
+    val source = Source.fromFile(tmpl)
+    val template = Template(source)
+    val context = Context("onDiet" -> false)
+    val output = template.render(context)
+    val expect = "Let's get to a bite to eat!\n"
+    assert(output === expect)
+  }
+  test("nest-if-foreach.txt") {
+    val tmpl = examplTmplateFile("nest-if-foreach.txt") 
+    val source = Source.fromFile(tmpl)
+    val template = Template(source)
+    val context = Context("diet" -> false, "hamburgers" -> List("Baker Bounce", "FELLOWS"))
+    val output = template.render(context)
+    val expect = "Baker Bounce\nFELLOWS\n"
+    assert(output === expect)
   }
   test("Render template contains if-else statements.") {
     val tmpl = examplTmplateFile("if-else.shtml")
