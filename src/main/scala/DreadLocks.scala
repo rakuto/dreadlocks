@@ -40,17 +40,20 @@ object Template
 {
   lazy val EXPR_PATTERN  = """[\$#]\{(.*?)\}""".r
   lazy val STMT_PATTERN  = """<\?(?:sc)(?:\s|\r?\n)(.*?)\s*\?>""".r
+  var rootPath = "."
   //val COMPILED_CLASS_DIR = "."
 
-  def apply(file: File)     = new Template(file)
-  def apply(source: Source) = new Template(source)
-  def apply(input: String)  = new Template(input)
+  def apply(file: File)     = new Template(file, rootPath)
+  def apply(source: Source) = new Template(source, rootPath)
+  def apply(input: String)  = new Template(input, rootPath)
+
+  def setTemplateRootPath(path: String) = {rootPath = path}
 }
 
 /**
  * This class provides methods used by templates at runtime.
  */
-class Template(source: String)
+class Template(source: String, _rootPath: String)
 {
   type Context = Map[String, Any]
 
@@ -59,13 +62,16 @@ class Template(source: String)
   var shorthand  = true
   var fromFile   = true
   var precompile = false
+  var rootPath   = _rootPath
   
   //lazy val compiler: Global = new Global(new Settings)
   private var output: String = ""
   private var context: Context = null
 
-  def this(source: Source) = this(source.getLines.mkString) 
-  def this(file: File) = this(Source.fromFile(file).getLines.mkString)
+  def this(source: Source, rootPath: String) = this(source.getLines.mkString, rootPath)
+  def this(file: File, rootPath: String) = this(Source.fromFile(file).getLines.mkString, rootPath)
+
+  def setRootPath(path: String) = rootPath = path
 
   def render(): String = render(Context())
   def render(context: Context): String = {
@@ -92,9 +98,18 @@ class Template(source: String)
     scripts += "var " + preamble + ": String = \"\"";
     Template.STMT_PATTERN.findAllIn(source).matchData.foreach { m =>
       val expr = m.group(1)
-      if(lastPos != m.start)
-        scripts += parseExpr(source.substring(lastPos, m.start))
-      scripts += expr
+      // evaluate specific expressions
+      """yields\s*"(.*?)"\s*""".r.findFirstMatchIn(expr) match {
+        case Some(m1) => 
+          val templatePath = rootPath + File.separator + m1.group(1)
+          val src = Source.fromFile(templatePath)
+          var template = Template(src)
+          scripts += preamble + "+=" +  quoteStr(source.substring(lastPos, m.start) + template.render(this.context))
+        case None =>
+          if(lastPos != m.start)
+            scripts += parseExpr(source.substring(lastPos, m.start))
+          scripts += expr
+      }
       lastPos = m.end
     }
     if(lastPos > 0) {
