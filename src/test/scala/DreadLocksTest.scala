@@ -90,11 +90,18 @@ class DreadLocksTest extends FunSuite {
     val output = template.render(Context("persona" -> persona))
     assert(output === "Hello, my name is Rakuto Furutani\n")
   }
-  test("Import other template file in template file.") {
-    val tmpl = examplTmplateFile("yields.shtml") 
+  //test("Import other template file in template file.") {
+    //val tmpl = examplTmplateFile("yields.shtml") 
+    //val source = Source.fromFile(tmpl)
+    //val template = Template(source)
+    //var output = template.render(Context())
+    //assert(output === "Hello from parent.\nHey boy from partial.shtml.\n")
+  //}
+  test("complex1.txt") {
+    val tmpl = examplTmplateFile("complex1.txt") 
     val source = Source.fromFile(tmpl)
     val template = Template(source)
-    var output = template.render(Context())
-    assert(output === "Hello from parent.\nHey boy from partial.shtml.\n")
+    var output = template.render(Context("fruits" -> Array("apple", "orange", "grape")))
+    assert(output === "apple\n" + "apple\norange\ngrape\n" + "grape\n")
   }
 }

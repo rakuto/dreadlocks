@@ -113,7 +113,10 @@ class Template(source: String, _rootPath: String)
       lastPos = m.end
     }
     if(lastPos > 0) {
-      if(lastPos != source.length) scripts += preamble + "+=" + quoteStr(trim0(source.substring(lastPos, source.length)))
+      if(lastPos != source.length) {
+        val script = trim0(source.substring(lastPos, source.length))
+        if(script != "") scripts += parseExpr(script)
+      }
     } else {
       parseExpression 
     }
